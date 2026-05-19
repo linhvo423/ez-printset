@@ -1,9 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+
 
 a = Analysis(
     ["main.py"],
-    pathex=[],
+    pathex=[os.path.abspath("src")],
     binaries=[],
     datas=[("profiles", "profiles")],
     hiddenimports=["win32timezone"],
