@@ -316,13 +316,8 @@ class PrintSetApp(tk.Tk):
         self._show_apply_result(message, result)
 
     def _show_apply_result(self, message: str, result) -> None:
-        if result.scope == "user":
-            message += " Da luu cho user hien tai."
         self.status_var.set(message)
-        if result.warnings:
-            messagebox.showwarning("Da ap dung voi canh bao", message + "\n\n" + "\n".join(result.warnings))
-        else:
-            messagebox.showinfo("Thanh cong", message)
+        messagebox.showinfo("Thanh cong", message)
 
     def _apply_failed(self, exc: Exception) -> None:
         self._set_buttons_state("normal")

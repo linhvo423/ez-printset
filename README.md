@@ -109,12 +109,12 @@ After extracting the downloaded artifact once, open the `EZ-PrintSet-windows` fo
 
 ## Notes
 
-Some Seagull driver options such as darkness, speed, sensor type, gap, and black mark may be stored in the driver's private `DEVMODE` area. This MVP focuses on paper size and orientation. Those advanced settings can be added later through driver profile export/import.
+Some Seagull driver options such as darkness, speed, sensor type, gap, and black mark may be stored in the driver's private `DEVMODE` area. This MVP focuses on paper size and orientation.
 
 Creating a brand-new Windows custom form can require Administrator permission depending on Windows policy and the printer driver.
 
 The app applies settings to the selected printer default. Run the app as Administrator if Windows blocks saving printer defaults.
 
-The app can read driver-exposed stock names with `py main.py stocks --printer "Your Printer Name"` and from the **Stock trong driver** dropdown. If a Seagull stock exists only in the driver's private configuration and is not returned by Windows `DeviceCapabilities`, the next step is a Seagull stock/profile import flow.
+The app can read driver-exposed stock names with `py main.py stocks --printer "Your Printer Name"` and from the **Stock trong driver** dropdown.
 
 For Seagull drivers that subtract **Exposed Liner Widths** from the displayed stock width, use the app's **Liner trai/phai (mm)** fields. They default to `0` and `0`. Example: if the driver has left/right liner `1.3 mm`, enter `1.3` and `1.3`; the app sends `label width + left liner + right liner` to compensate.

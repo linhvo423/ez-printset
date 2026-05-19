@@ -4,7 +4,12 @@ import argparse
 
 from .gui import run_gui
 from .models import LabelPreset
-from .windows_printer import PrinterBackendError, apply_label_preset, list_printer_stocks, list_printers
+from .windows_printer import (
+    PrinterBackendError,
+    apply_label_preset,
+    list_printer_stocks,
+    list_printers,
+)
 
 
 def main() -> int:
@@ -87,3 +92,4 @@ def _list_stocks(args: argparse.Namespace) -> int:
         paper_id = f" [paper_id={stock.paper_id}]" if stock.paper_id is not None else ""
         print(f"{stock.name}{size}{paper_id}")
     return 0
+
