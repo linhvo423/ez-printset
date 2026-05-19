@@ -11,6 +11,7 @@ The app uses:
 ## Features
 
 - List installed Windows printers.
+- Read and apply driver-exposed stocks from the selected printer.
 - Create reusable label size presets in millimeters.
 - Add a Windows custom paper form when needed.
 - Apply the selected paper size, orientation, width, and height to the printer default settings.
@@ -33,6 +34,11 @@ Run the app:
 ```powershell
 py main.py
 ```
+
+The desktop app has two separate flows:
+
+- **Stock co san**: choose a stock already available in the selected printer driver, then apply it.
+- **Tao moi**: enter a new label size, optional liner compensation, save it as a preset if needed, then create and apply it.
 
 Run CLI commands:
 

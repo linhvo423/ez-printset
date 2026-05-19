@@ -60,12 +60,16 @@ def _apply(args: argparse.Namespace) -> int:
     )
 
     try:
-        apply_label_preset(args.printer, preset)
+        result = apply_label_preset(args.printer, preset)
     except Exception as exc:
         print(exc)
         return 1
 
     print(f"Da ap dung {preset.width_mm:g} x {preset.height_mm:g} mm cho {args.printer}.")
+    if result.scope == "user":
+        print("Da luu cho user hien tai.")
+    for warning in result.warnings:
+        print(f"Canh bao: {warning}")
     return 0
 
 
