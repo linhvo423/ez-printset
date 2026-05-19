@@ -3,11 +3,14 @@
 import os
 
 
+icon_path = os.path.abspath("assets/app.ico")
+icon_file = icon_path if os.path.exists(icon_path) else None
+
 a = Analysis(
     ["main.py"],
     pathex=[os.path.abspath("src")],
     binaries=[],
-    datas=[("profiles", "profiles")],
+    datas=[("profiles", "profiles"), ("assets", "assets")],
     hiddenimports=["win32timezone"],
     hookspath=[],
     hooksconfig={},
@@ -32,6 +35,7 @@ exe = EXE(
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
+    icon=icon_file,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

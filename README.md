@@ -40,6 +40,7 @@ Run CLI commands:
 py main.py list
 py main.py apply --printer "Your Printer Name" --width-mm 100 --height-mm 150
 py main.py apply --printer "Your Printer Name" --width-mm 50 --height-mm 30 --landscape
+py main.py apply --printer "Your Printer Name" --width-mm 100 --height-mm 150 --current-user
 ```
 
 ## Build EXE
@@ -63,6 +64,18 @@ powershell -ExecutionPolicy Bypass -File scripts/build_exe.ps1
 ```
 
 The executable will be created in `dist/EZ-PrintSet.exe`.
+
+## Set App Logo
+
+Create or export a Windows icon file:
+
+```txt
+assets/app.ico
+```
+
+Recommended `.ico` sizes: `16x16`, `32x32`, `48x48`, and `256x256`.
+
+After adding or replacing the icon, rebuild the app. GitHub Actions and `scripts/build_exe.ps1` will automatically use `assets/app.ico` as the executable icon and app window icon.
 
 Create a release ZIP:
 
@@ -91,4 +104,8 @@ The artifact `EZ-PrintSet-windows` contains `EZ-PrintSet-windows.zip`, which inc
 
 Some Seagull driver options such as darkness, speed, sensor type, gap, and black mark may be stored in the driver's private `DEVMODE` area. This MVP focuses on paper size and orientation. Those advanced settings can be added later through driver profile export/import.
 
-Creating a brand-new Windows custom form can require Administrator permission depending on Windows policy and the printer driver. Applying an existing form to the current user's Printing Preferences is attempted first and usually does not require admin rights.
+Creating a brand-new Windows custom form can require Administrator permission depending on Windows policy and the printer driver.
+
+The app applies settings to the selected printer's machine default by default. Run the app as Administrator for this mode. Uncheck **Ap dung mac dinh may in** to apply only to the current Windows user.
+
+For Seagull drivers, a raw custom size can still appear as `USER` in the Stock dropdown if the driver decides to treat it as an unsaved private stock. The app now creates the Windows form using the preset name and asks the driver for the matching paper id before applying the size. If the driver still shows `USER`, the next step is a Seagull stock/profile import flow because that stock list is driver-private.

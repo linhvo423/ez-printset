@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from .models import LabelPreset, validate_label_size
-from .paths import DEFAULT_PRESETS_PATH, PRESETS_PATH
+from .paths import APP_ICON_PATH, DEFAULT_PRESETS_PATH, PRESETS_PATH
 from .presets import load_presets, save_presets, upsert_preset
 from .windows_printer import PrinterBackendError, apply_label_preset, list_printers
 
@@ -14,6 +14,7 @@ class PrintSetApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("EZ PrintSet")
+        self._set_app_icon()
         self.geometry("720x430")
         self.minsize(680, 390)
 
@@ -26,11 +27,20 @@ class PrintSetApp(tk.Tk):
         self.width_var = tk.StringVar()
         self.height_var = tk.StringVar()
         self.orientation_var = tk.StringVar(value="portrait")
+        self.machine_default_var = tk.BooleanVar(value=True)
         self.status_var = tk.StringVar(value="San sang.")
 
         self._build_ui()
         self._load_printers()
         self._refresh_presets()
+
+    def _set_app_icon(self) -> None:
+        if not APP_ICON_PATH.exists():
+            return
+        try:
+            self.iconbitmap(str(APP_ICON_PATH))
+        except tk.TclError:
+            pass
 
     def _build_ui(self) -> None:
         self.columnconfigure(0, weight=1)
@@ -78,14 +88,20 @@ class PrintSetApp(tk.Tk):
             value="landscape",
         ).pack(side="left", padx=(18, 0))
 
+        ttk.Checkbutton(
+            root,
+            text="Ap dung mac dinh may in",
+            variable=self.machine_default_var,
+        ).grid(row=7, column=1, columnspan=2, sticky="w", pady=(0, 8))
+
         action_frame = ttk.Frame(root)
-        action_frame.grid(row=7, column=0, columnspan=3, sticky="ew", pady=(14, 0))
+        action_frame.grid(row=8, column=0, columnspan=3, sticky="ew", pady=(14, 0))
         action_frame.columnconfigure(0, weight=1)
         ttk.Button(action_frame, text="Luu kich thuoc", command=self._save_current_preset).grid(row=0, column=1, padx=(0, 10))
         ttk.Button(action_frame, text="Ap dung", command=self._apply_current_preset).grid(row=0, column=2)
 
         status = ttk.Label(root, textvariable=self.status_var, anchor="w")
-        status.grid(row=8, column=0, columnspan=3, sticky="ew", pady=(18, 0))
+        status.grid(row=9, column=0, columnspan=3, sticky="ew", pady=(18, 0))
 
     def _load_printers(self) -> None:
         try:
@@ -165,12 +181,13 @@ class PrintSetApp(tk.Tk):
 
         self.status_var.set("Dang ap dung cau hinh...")
         self._set_buttons_state("disabled")
-        thread = threading.Thread(target=self._apply_worker, args=(printer_name, preset), daemon=True)
+        scope = "machine" if self.machine_default_var.get() else "user"
+        thread = threading.Thread(target=self._apply_worker, args=(printer_name, preset, scope), daemon=True)
         thread.start()
 
-    def _apply_worker(self, printer_name: str, preset: LabelPreset) -> None:
+    def _apply_worker(self, printer_name: str, preset: LabelPreset, scope: str) -> None:
         try:
-            apply_label_preset(printer_name, preset)
+            apply_label_preset(printer_name, preset, scope)
         except Exception as exc:
             self.after(0, self._apply_failed, exc)
             return

@@ -50,11 +50,11 @@ def list_printers() -> list[PrinterInfo]:
     return sorted(printers, key=lambda printer: printer.name.lower())
 
 
-def apply_label_preset(printer_name: str, preset: LabelPreset) -> None:
+def apply_label_preset(printer_name: str, preset: LabelPreset, scope: str = "machine") -> None:
     require_windows_backend()
     validate_label_size(preset.width_mm, preset.height_mm)
     ensure_form(printer_name, preset)
-    _apply_devmode(printer_name, preset)
+    _apply_devmode(printer_name, preset, scope)
 
 
 def ensure_form(printer_name: str, preset: LabelPreset) -> None:
@@ -106,7 +106,7 @@ def open_printer(printer_name: str, desired_access: int | None = None) -> Iterat
         win32print.ClosePrinter(printer)
 
 
-def _apply_devmode(printer_name: str, preset: LabelPreset) -> None:
+def _apply_devmode(printer_name: str, preset: LabelPreset, scope: str) -> None:
     import pywintypes
     import win32con
     import win32print
@@ -117,8 +117,9 @@ def _apply_devmode(printer_name: str, preset: LabelPreset) -> None:
         if devmode is None:
             raise PrinterBackendError("Driver khong tra ve cau hinh DEVMODE.")
 
+        paper_id = _find_driver_paper_id(printer_name, info.get("pPortName", ""), preset.form_name)
         devmode.FormName = preset.form_name
-        devmode.PaperSize = getattr(win32con, "DMPAPER_USER", 256)
+        devmode.PaperSize = paper_id or getattr(win32con, "DMPAPER_USER", 256)
         devmode.PaperWidth = _devmode_size(preset.width_mm)
         devmode.PaperLength = _devmode_size(preset.height_mm)
         devmode.Orientation = (
@@ -141,15 +142,22 @@ def _apply_devmode(printer_name: str, preset: LabelPreset) -> None:
         else:
             info["pDevMode"] = devmode
 
-        try:
-            win32print.SetPrinter(printer, 9, {"pDevMode": info["pDevMode"]}, 0)
-        except pywintypes.error as exc:
+        if scope == "user":
             try:
-                win32print.SetPrinter(printer, 2, info, 0)
-            except pywintypes.error as admin_exc:
+                win32print.SetPrinter(printer, 9, {"pDevMode": info["pDevMode"]}, 0)
+            except pywintypes.error as exc:
                 raise PrinterBackendError(
-                    "Khong ap dung duoc vao Printing Preferences. Hay thu chay app bang quyen Administrator."
-                ) from admin_exc
+                    "Khong ap dung duoc vao Printing Preferences cua user hien tai."
+                ) from exc
+            return
+
+        try:
+            win32print.SetPrinter(printer, 2, info, 0)
+        except pywintypes.error as exc:
+            raise PrinterBackendError(
+                "Khong ap dung duoc vao mac dinh cua may in. Hay chay app bang quyen Administrator "
+                "hoac bo chon 'Ap dung mac dinh may in'."
+            ) from exc
 
 
 def _form_size(width_mm: float, height_mm: float) -> dict[str, int]:
@@ -158,3 +166,23 @@ def _form_size(width_mm: float, height_mm: float) -> dict[str, int]:
 
 def _devmode_size(value_mm: float) -> int:
     return int(round(value_mm * 10))
+
+
+def _find_driver_paper_id(printer_name: str, port_name: str, form_name: str) -> int | None:
+    import win32con
+    import win32print
+
+    if not port_name:
+        return None
+
+    try:
+        paper_names = win32print.DeviceCapabilities(printer_name, port_name, win32con.DC_PAPERNAMES)
+        paper_ids = win32print.DeviceCapabilities(printer_name, port_name, win32con.DC_PAPERS)
+    except Exception:
+        return None
+
+    target = form_name.strip().lower()
+    for name, paper_id in zip(paper_names, paper_ids):
+        if str(name).strip().lower() == target:
+            return int(paper_id)
+    return None

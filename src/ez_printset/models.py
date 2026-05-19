@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 
 
 @dataclass(frozen=True)
@@ -10,6 +11,11 @@ class LabelPreset:
 
     @property
     def form_name(self) -> str:
+        name = re.sub(r"\s+", " ", self.name.strip())
+        name = re.sub(r'[\\/:*?"<>|,;=]', "-", name)
+        if name:
+            return name[:31]
+
         width = _clean_number(self.width_mm)
         height = _clean_number(self.height_mm)
         return f"EZ_LABEL_{width}x{height}_MM"

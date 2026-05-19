@@ -19,6 +19,7 @@ def main() -> int:
     apply_parser.add_argument("--height-mm", type=float, required=True)
     apply_parser.add_argument("--name")
     apply_parser.add_argument("--landscape", action="store_true")
+    apply_parser.add_argument("--current-user", action="store_true")
 
     args = parser.parse_args()
 
@@ -51,7 +52,7 @@ def _apply(args: argparse.Namespace) -> int:
     )
 
     try:
-        apply_label_preset(args.printer, preset)
+        apply_label_preset(args.printer, preset, "user" if args.current_user else "machine")
     except Exception as exc:
         print(exc)
         return 1
