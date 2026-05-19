@@ -8,6 +8,12 @@ class LabelPreset:
     width_mm: float
     height_mm: float
     orientation: str = "portrait"
+    liner_left_mm: float = 0
+    liner_right_mm: float = 0
+
+    @property
+    def effective_width_mm(self) -> float:
+        return self.width_mm + self.liner_left_mm + self.liner_right_mm
 
     @property
     def form_name(self) -> str:
@@ -32,3 +38,10 @@ def validate_label_size(width_mm: float, height_mm: float) -> None:
         raise ValueError("Kich thuoc phai lon hon 0 mm.")
     if width_mm > 1000 or height_mm > 1000:
         raise ValueError("Kich thuoc toi da duoc gioi han 1000 mm.")
+
+
+def validate_liner_width(left_mm: float, right_mm: float) -> None:
+    if left_mm < 0 or right_mm < 0:
+        raise ValueError("Liner trai/phai khong duoc nho hon 0 mm.")
+    if left_mm > 100 or right_mm > 100:
+        raise ValueError("Liner trai/phai toi da duoc gioi han 100 mm.")

@@ -4,10 +4,10 @@ import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from .models import LabelPreset, validate_label_size
+from .models import LabelPreset, validate_label_size, validate_liner_width
 from .paths import APP_ICON_PATH, DEFAULT_PRESETS_PATH, PRESETS_PATH
 from .presets import load_presets, save_presets, upsert_preset
-from .windows_printer import PrinterBackendError, apply_label_preset, list_printers
+from .windows_printer import PrinterBackendError, apply_label_preset, list_printer_stocks, list_printers
 
 
 class PrintSetApp(tk.Tk):
@@ -15,19 +15,22 @@ class PrintSetApp(tk.Tk):
         super().__init__()
         self.title("EZ PrintSet")
         self._set_app_icon()
-        self.geometry("720x430")
-        self.minsize(680, 390)
+        self.geometry("760x540")
+        self.minsize(720, 500)
 
         self.presets = load_presets(PRESETS_PATH) or load_presets(DEFAULT_PRESETS_PATH)
         self.printers = []
+        self.stocks = []
 
         self.printer_var = tk.StringVar()
+        self.stock_var = tk.StringVar()
         self.preset_var = tk.StringVar()
         self.name_var = tk.StringVar()
         self.width_var = tk.StringVar()
         self.height_var = tk.StringVar()
+        self.liner_left_var = tk.StringVar(value="0")
+        self.liner_right_var = tk.StringVar(value="0")
         self.orientation_var = tk.StringVar(value="portrait")
-        self.machine_default_var = tk.BooleanVar(value=True)
         self.status_var = tk.StringVar(value="San sang.")
 
         self._build_ui()
@@ -53,28 +56,43 @@ class PrintSetApp(tk.Tk):
         ttk.Label(root, text="May in").grid(row=0, column=0, sticky="w", pady=(0, 8))
         self.printer_combo = ttk.Combobox(root, textvariable=self.printer_var, state="readonly")
         self.printer_combo.grid(row=0, column=1, sticky="ew", pady=(0, 8))
+        self.printer_combo.bind("<<ComboboxSelected>>", self._on_printer_selected)
         ttk.Button(root, text="Tai lai", command=self._load_printers).grid(row=0, column=2, padx=(10, 0), pady=(0, 8))
 
-        ttk.Label(root, text="Kich thuoc co san").grid(row=1, column=0, sticky="w", pady=(0, 8))
+        ttk.Label(root, text="Stock trong driver").grid(row=1, column=0, sticky="w", pady=(0, 8))
+        self.stock_combo = ttk.Combobox(root, textvariable=self.stock_var, state="readonly")
+        self.stock_combo.grid(row=1, column=1, sticky="ew", pady=(0, 8))
+        self.stock_combo.bind("<<ComboboxSelected>>", self._on_stock_selected)
+        ttk.Button(root, text="Tai stock", command=self._load_stocks).grid(row=1, column=2, padx=(10, 0), pady=(0, 8))
+
+        ttk.Label(root, text="Kich thuoc co san").grid(row=2, column=0, sticky="w", pady=(0, 8))
         self.preset_combo = ttk.Combobox(root, textvariable=self.preset_var, state="readonly")
-        self.preset_combo.grid(row=1, column=1, sticky="ew", pady=(0, 8))
+        self.preset_combo.grid(row=2, column=1, columnspan=2, sticky="ew", pady=(0, 8))
         self.preset_combo.bind("<<ComboboxSelected>>", self._on_preset_selected)
 
         separator = ttk.Separator(root)
-        separator.grid(row=2, column=0, columnspan=3, sticky="ew", pady=12)
+        separator.grid(row=3, column=0, columnspan=3, sticky="ew", pady=12)
 
-        ttk.Label(root, text="Ten kich thuoc").grid(row=3, column=0, sticky="w", pady=(0, 8))
-        ttk.Entry(root, textvariable=self.name_var).grid(row=3, column=1, columnspan=2, sticky="ew", pady=(0, 8))
+        ttk.Label(root, text="Ten kich thuoc").grid(row=4, column=0, sticky="w", pady=(0, 8))
+        ttk.Entry(root, textvariable=self.name_var).grid(row=4, column=1, columnspan=2, sticky="ew", pady=(0, 8))
 
-        ttk.Label(root, text="Rong (mm)").grid(row=4, column=0, sticky="w", pady=(0, 8))
-        ttk.Entry(root, textvariable=self.width_var).grid(row=4, column=1, columnspan=2, sticky="ew", pady=(0, 8))
+        ttk.Label(root, text="Rong (mm)").grid(row=5, column=0, sticky="w", pady=(0, 8))
+        ttk.Entry(root, textvariable=self.width_var).grid(row=5, column=1, columnspan=2, sticky="ew", pady=(0, 8))
 
-        ttk.Label(root, text="Cao (mm)").grid(row=5, column=0, sticky="w", pady=(0, 8))
-        ttk.Entry(root, textvariable=self.height_var).grid(row=5, column=1, columnspan=2, sticky="ew", pady=(0, 8))
+        ttk.Label(root, text="Cao (mm)").grid(row=6, column=0, sticky="w", pady=(0, 8))
+        ttk.Entry(root, textvariable=self.height_var).grid(row=6, column=1, columnspan=2, sticky="ew", pady=(0, 8))
 
-        ttk.Label(root, text="Chieu in").grid(row=6, column=0, sticky="w", pady=(0, 8))
+        ttk.Label(root, text="Liner trai/phai (mm)").grid(row=7, column=0, sticky="w", pady=(0, 8))
+        liner_frame = ttk.Frame(root)
+        liner_frame.grid(row=7, column=1, columnspan=2, sticky="ew", pady=(0, 8))
+        liner_frame.columnconfigure(0, weight=1)
+        liner_frame.columnconfigure(1, weight=1)
+        ttk.Entry(liner_frame, textvariable=self.liner_left_var).grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        ttk.Entry(liner_frame, textvariable=self.liner_right_var).grid(row=0, column=1, sticky="ew")
+
+        ttk.Label(root, text="Chieu in").grid(row=8, column=0, sticky="w", pady=(0, 8))
         orientation_frame = ttk.Frame(root)
-        orientation_frame.grid(row=6, column=1, columnspan=2, sticky="w", pady=(0, 8))
+        orientation_frame.grid(row=8, column=1, columnspan=2, sticky="w", pady=(0, 8))
         ttk.Radiobutton(
             orientation_frame,
             text="Doc",
@@ -88,20 +106,14 @@ class PrintSetApp(tk.Tk):
             value="landscape",
         ).pack(side="left", padx=(18, 0))
 
-        ttk.Checkbutton(
-            root,
-            text="Ap dung mac dinh may in",
-            variable=self.machine_default_var,
-        ).grid(row=7, column=1, columnspan=2, sticky="w", pady=(0, 8))
-
         action_frame = ttk.Frame(root)
-        action_frame.grid(row=8, column=0, columnspan=3, sticky="ew", pady=(14, 0))
+        action_frame.grid(row=9, column=0, columnspan=3, sticky="ew", pady=(14, 0))
         action_frame.columnconfigure(0, weight=1)
         ttk.Button(action_frame, text="Luu kich thuoc", command=self._save_current_preset).grid(row=0, column=1, padx=(0, 10))
         ttk.Button(action_frame, text="Ap dung", command=self._apply_current_preset).grid(row=0, column=2)
 
         status = ttk.Label(root, textvariable=self.status_var, anchor="w")
-        status.grid(row=9, column=0, columnspan=3, sticky="ew", pady=(18, 0))
+        status.grid(row=10, column=0, columnspan=3, sticky="ew", pady=(18, 0))
 
     def _load_printers(self) -> None:
         try:
@@ -116,6 +128,47 @@ class PrintSetApp(tk.Tk):
         if names and not self.printer_var.get():
             self.printer_var.set(names[0])
         self.status_var.set(f"Tim thay {len(names)} may in.")
+        self._load_stocks()
+
+    def _on_printer_selected(self, _event=None) -> None:
+        self._load_stocks()
+
+    def _load_stocks(self) -> None:
+        printer_name = self.printer_var.get()
+        self.stocks = []
+        self.stock_var.set("")
+        self.stock_combo["values"] = []
+        if not printer_name:
+            return
+
+        try:
+            self.stocks = list_printer_stocks(printer_name)
+        except PrinterBackendError as exc:
+            self.status_var.set(str(exc))
+            return
+
+        values = [self._stock_label(stock) for stock in self.stocks]
+        self.stock_combo["values"] = values
+        self.status_var.set(f"Doc duoc {len(values)} stock tu {printer_name}.")
+
+    def _on_stock_selected(self, _event=None) -> None:
+        index = self.stock_combo.current()
+        if index < 0 or index >= len(self.stocks):
+            return
+
+        stock = self.stocks[index]
+        self.name_var.set(stock.name)
+        if stock.width_mm:
+            self.width_var.set(f"{stock.width_mm:g}")
+        if stock.height_mm:
+            self.height_var.set(f"{stock.height_mm:g}")
+        self.liner_left_var.set("0")
+        self.liner_right_var.set("0")
+
+    def _stock_label(self, stock) -> str:
+        if stock.width_mm and stock.height_mm:
+            return f"{stock.name} ({stock.width_mm:g} x {stock.height_mm:g} mm)"
+        return stock.name
 
     def _refresh_presets(self) -> None:
         names = [preset.name for preset in self.presets]
@@ -133,19 +186,31 @@ class PrintSetApp(tk.Tk):
         self.name_var.set(preset.name)
         self.width_var.set(str(preset.width_mm).rstrip("0").rstrip("."))
         self.height_var.set(str(preset.height_mm).rstrip("0").rstrip("."))
+        self.liner_left_var.set(str(preset.liner_left_mm).rstrip("0").rstrip(".") or "0")
+        self.liner_right_var.set(str(preset.liner_right_mm).rstrip("0").rstrip(".") or "0")
         self.orientation_var.set(preset.orientation)
 
     def _current_preset(self) -> LabelPreset:
         try:
             width_mm = float(self.width_var.get().replace(",", "."))
             height_mm = float(self.height_var.get().replace(",", "."))
+            liner_left_mm = float(self.liner_left_var.get().replace(",", ".") or 0)
+            liner_right_mm = float(self.liner_right_var.get().replace(",", ".") or 0)
         except ValueError as exc:
-            raise ValueError("Rong va cao phai la so.") from exc
+            raise ValueError("Rong, cao va liner phai la so.") from exc
 
         validate_label_size(width_mm, height_mm)
+        validate_liner_width(liner_left_mm, liner_right_mm)
         name = self.name_var.get().strip() or f"Tem {width_mm:g} x {height_mm:g} mm"
         orientation = self.orientation_var.get()
-        return LabelPreset(name=name, width_mm=width_mm, height_mm=height_mm, orientation=orientation)
+        return LabelPreset(
+            name=name,
+            width_mm=width_mm,
+            height_mm=height_mm,
+            orientation=orientation,
+            liner_left_mm=liner_left_mm,
+            liner_right_mm=liner_right_mm,
+        )
 
     def _selected_preset(self) -> LabelPreset | None:
         name = self.preset_var.get()
@@ -181,13 +246,12 @@ class PrintSetApp(tk.Tk):
 
         self.status_var.set("Dang ap dung cau hinh...")
         self._set_buttons_state("disabled")
-        scope = "machine" if self.machine_default_var.get() else "user"
-        thread = threading.Thread(target=self._apply_worker, args=(printer_name, preset, scope), daemon=True)
+        thread = threading.Thread(target=self._apply_worker, args=(printer_name, preset), daemon=True)
         thread.start()
 
-    def _apply_worker(self, printer_name: str, preset: LabelPreset, scope: str) -> None:
+    def _apply_worker(self, printer_name: str, preset: LabelPreset) -> None:
         try:
-            apply_label_preset(printer_name, preset, scope)
+            apply_label_preset(printer_name, preset)
         except Exception as exc:
             self.after(0, self._apply_failed, exc)
             return
@@ -196,6 +260,8 @@ class PrintSetApp(tk.Tk):
     def _apply_done(self, printer_name: str, preset: LabelPreset) -> None:
         self._set_buttons_state("normal")
         message = f"Da ap dung {preset.width_mm:g} x {preset.height_mm:g} mm cho {printer_name}."
+        if preset.liner_left_mm or preset.liner_right_mm:
+            message += f" Liner: {preset.liner_left_mm:g}/{preset.liner_right_mm:g} mm."
         self.status_var.set(message)
         messagebox.showinfo("Thanh cong", message)
 

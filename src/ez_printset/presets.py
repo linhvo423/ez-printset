@@ -18,6 +18,8 @@ def load_presets(path: Path) -> list[LabelPreset]:
             width_mm=float(item["width_mm"]),
             height_mm=float(item["height_mm"]),
             orientation=str(item.get("orientation", "portrait")),
+            liner_left_mm=float(item.get("liner_left_mm", 0)),
+            liner_right_mm=float(item.get("liner_right_mm", 0)),
         )
         validate_label_size(preset.width_mm, preset.height_mm)
         presets.append(preset)
@@ -32,6 +34,8 @@ def save_presets(path: Path, presets: list[LabelPreset]) -> None:
             "width_mm": preset.width_mm,
             "height_mm": preset.height_mm,
             "orientation": preset.orientation,
+            "liner_left_mm": preset.liner_left_mm,
+            "liner_right_mm": preset.liner_right_mm,
         }
         for preset in presets
     ]

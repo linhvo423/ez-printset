@@ -37,22 +37,16 @@ jobs:
         run: |
           pyinstaller --clean --noconfirm EZ-PrintSet.spec
 
-      - name: Package release zip
+      - name: Prepare artifact folder
         shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path release | Out-Null
-          Compress-Archive -Path "dist\EZ-PrintSet.exe", "README.md" -DestinationPath "release\EZ-PrintSet-windows.zip" -Force
+          New-Item -ItemType Directory -Force -Path release\EZ-PrintSet-windows | Out-Null
+          Copy-Item "dist\EZ-PrintSet.exe" "release\EZ-PrintSet-windows\EZ-PrintSet.exe" -Force
+          Copy-Item "README.md" "release\EZ-PrintSet-windows\README.md" -Force
 
-      - name: Upload EXE artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: EZ-PrintSet-exe
-          path: dist/EZ-PrintSet.exe
-          if-no-files-found: error
-
-      - name: Upload ZIP artifact
+      - name: Upload Windows app artifact
         uses: actions/upload-artifact@v4
         with:
           name: EZ-PrintSet-windows
-          path: release/EZ-PrintSet-windows.zip
+          path: release
           if-no-files-found: error

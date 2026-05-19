@@ -38,9 +38,10 @@ Run CLI commands:
 
 ```powershell
 py main.py list
+py main.py stocks --printer "Your Printer Name"
 py main.py apply --printer "Your Printer Name" --width-mm 100 --height-mm 150
 py main.py apply --printer "Your Printer Name" --width-mm 50 --height-mm 30 --landscape
-py main.py apply --printer "Your Printer Name" --width-mm 100 --height-mm 150 --current-user
+py main.py apply --printer "Your Printer Name" --width-mm 100 --height-mm 150 --liner-left-mm 1.3 --liner-right-mm 1.3
 ```
 
 ## Build EXE
@@ -96,9 +97,9 @@ After pushing the project to GitHub:
 3. Select **Build Windows EXE**.
 4. Click **Run workflow**.
 5. Open the completed workflow run.
-6. Download the artifact named `EZ-PrintSet-windows` or `EZ-PrintSet-exe`.
+6. Download the artifact named `EZ-PrintSet-windows`.
 
-The artifact `EZ-PrintSet-windows` contains `EZ-PrintSet-windows.zip`, which includes the Windows executable for staff.
+After extracting the downloaded artifact once, open the `EZ-PrintSet-windows` folder. It contains `EZ-PrintSet.exe` and `README.md`.
 
 ## Notes
 
@@ -106,6 +107,8 @@ Some Seagull driver options such as darkness, speed, sensor type, gap, and black
 
 Creating a brand-new Windows custom form can require Administrator permission depending on Windows policy and the printer driver.
 
-The app applies settings to the selected printer's machine default by default. Run the app as Administrator for this mode. Uncheck **Ap dung mac dinh may in** to apply only to the current Windows user.
+The app applies settings to the selected printer default. Run the app as Administrator if Windows blocks saving printer defaults.
 
-For Seagull drivers, a raw custom size can still appear as `USER` in the Stock dropdown if the driver decides to treat it as an unsaved private stock. The app now creates the Windows form using the preset name and asks the driver for the matching paper id before applying the size. If the driver still shows `USER`, the next step is a Seagull stock/profile import flow because that stock list is driver-private.
+The app can read driver-exposed stock names with `py main.py stocks --printer "Your Printer Name"` and from the **Stock trong driver** dropdown. If a Seagull stock exists only in the driver's private configuration and is not returned by Windows `DeviceCapabilities`, the next step is a Seagull stock/profile import flow.
+
+For Seagull drivers that subtract **Exposed Liner Widths** from the displayed stock width, use the app's **Liner trai/phai (mm)** fields. They default to `0` and `0`. Example: if the driver has left/right liner `1.3 mm`, enter `1.3` and `1.3`; the app sends `label width + left liner + right liner` to compensate.
