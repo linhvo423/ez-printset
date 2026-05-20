@@ -43,7 +43,6 @@ class PrintSetApp(tk.Tk):
 
         self._build_ui()
         self._load_printers()
-        self._refresh_presets()
 
     def _set_app_icon(self) -> None:
         if not APP_ICON_PATH.exists():
