@@ -30,6 +30,7 @@ class PrintSetApp(tk.Tk):
 
         self.printer_var = tk.StringVar()
         self.stock_var = tk.StringVar()
+        self.stock_size_var = tk.StringVar(value="-")
         self.stock_orientation_var = tk.StringVar(value="portrait")
         self.preset_var = tk.StringVar()
         self.name_var = tk.StringVar()
@@ -90,14 +91,17 @@ class PrintSetApp(tk.Tk):
         self.stock_combo.bind("<<ComboboxSelected>>", self._on_stock_selected)
         ttk.Button(root, text="Tai stock", command=self._load_stocks).grid(row=0, column=2, padx=(10, 0), pady=(0, 10))
 
-        ttk.Label(root, text="Chieu in").grid(row=1, column=0, sticky="w", pady=(0, 10))
+        ttk.Label(root, text="Kich thuoc").grid(row=1, column=0, sticky="w", pady=(0, 10))
+        ttk.Label(root, textvariable=self.stock_size_var).grid(row=1, column=1, columnspan=2, sticky="w", pady=(0, 10))
+
+        ttk.Label(root, text="Chieu in").grid(row=2, column=0, sticky="w", pady=(0, 10))
         orientation_frame = ttk.Frame(root)
-        orientation_frame.grid(row=1, column=1, columnspan=2, sticky="w", pady=(0, 10))
+        orientation_frame.grid(row=2, column=1, columnspan=2, sticky="w", pady=(0, 10))
         ttk.Radiobutton(orientation_frame, text="Doc", variable=self.stock_orientation_var, value="portrait").pack(side="left")
         ttk.Radiobutton(orientation_frame, text="Ngang", variable=self.stock_orientation_var, value="landscape").pack(side="left", padx=(18, 0))
 
         action_frame = ttk.Frame(root)
-        action_frame.grid(row=2, column=0, columnspan=3, sticky="ew", pady=(18, 0))
+        action_frame.grid(row=3, column=0, columnspan=3, sticky="ew", pady=(18, 0))
         action_frame.columnconfigure(0, weight=1)
         ttk.Button(action_frame, text="Ap dung stock", command=self._apply_current_stock).grid(row=0, column=1)
 
@@ -158,6 +162,7 @@ class PrintSetApp(tk.Tk):
         printer_name = self.printer_var.get()
         self.stocks = []
         self.stock_var.set("")
+        self.stock_size_var.set("-")
         self.stock_combo["values"] = []
         if not printer_name:
             return
@@ -172,17 +177,26 @@ class PrintSetApp(tk.Tk):
         self.stock_combo["values"] = values
         if values:
             self.stock_combo.current(0)
+            self._show_selected_stock_size()
         self.status_var.set(f"Doc duoc {len(values)} stock tu {printer_name}.")
 
     def _on_stock_selected(self, _event=None) -> None:
         stock = self._selected_stock()
         if stock:
+            self._show_selected_stock_size()
             self.status_var.set(f"Da chon stock {stock.name}.")
 
     def _stock_label(self, stock) -> str:
         if stock.width_mm and stock.height_mm:
-            return f"{stock.name} ({stock.width_mm:g} x {stock.height_mm:g} mm)"
+            return f"{stock.name} ({stock.width_mm:.1f} mm x {stock.height_mm:.1f} mm)"
         return stock.name
+
+    def _show_selected_stock_size(self) -> None:
+        stock = self._selected_stock()
+        if stock and stock.width_mm and stock.height_mm:
+            self.stock_size_var.set(f"{stock.width_mm:.1f} mm x {stock.height_mm:.1f} mm")
+            return
+        self.stock_size_var.set("Khong doc duoc kich thuoc tu driver")
 
     def _selected_stock(self):
         index = self.stock_combo.current()
