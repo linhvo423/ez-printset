@@ -72,14 +72,10 @@ class PrintSetApp(tk.Tk):
         notebook.grid(row=1, column=0, columnspan=3, sticky="nsew")
 
         stock_tab = ttk.Frame(notebook, padding=14)
-        custom_tab = ttk.Frame(notebook, padding=14)
         stock_tab.columnconfigure(1, weight=1)
-        custom_tab.columnconfigure(1, weight=1)
         notebook.add(stock_tab, text="Stock co san")
-        notebook.add(custom_tab, text="Tao moi")
 
         self._build_stock_tab(stock_tab)
-        self._build_custom_tab(custom_tab)
 
         status = ttk.Label(root, textvariable=self.status_var, anchor="w")
         status.grid(row=2, column=0, columnspan=3, sticky="ew", pady=(14, 0))
